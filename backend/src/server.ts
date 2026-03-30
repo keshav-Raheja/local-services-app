@@ -12,9 +12,17 @@ dotenv.config();
 
 const app = express();
 
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3000").split(",");
 
 app.use(cors({
-  origin: "http://localhost:3000"
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
 }));
 app.use(express.json());
 
@@ -29,7 +37,7 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 mongoose.connect(process.env.MONGO_URI as string)
 .then(() => {
