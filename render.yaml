@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: local-services-api
+    runtime: node
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: node backend/dist/server.js
+    envVars:
+      - key: MONGO_URI
+        scope: build,runtime
+      - key: JWT_SECRET
+        scope: build,runtime
+      - key: ALLOWED_ORIGINS
+        scope: build,runtime
+      - key: PORT
+        scope: build,runtime
