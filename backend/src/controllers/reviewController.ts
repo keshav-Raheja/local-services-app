@@ -1,83 +1,58 @@
 import { Request, Response } from "express";
 import Review from "../models/reviewModel";
 import Booking from "../models/bookingModel";
+import Provider from "../models/providerModel";
 
-// ADD REVIEW (WITH CONDITIONS)
-export const addReview = async (req: Request, res: Response) => {
+// ADD REVIEW
+export const addReview = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { userId, providerId, rating, feedback } = req.body;
-    if (rating < 1 || rating > 5) {
-        return res.status(400).json({
-            message: "Rating must be between 1 and 5"
-        });
+    const { providerId, rating, feedback } = req.body;
+    const userId = req.user?.id;
+
+    if (!rating || rating < 1 || rating > 5) {
+      res.status(400).json({ message: "Rating must be between 1 and 5" });
+      return;
     }
 
-    // 1️⃣ Check booking exists
-    const booking = await Booking.findOne({
-      userId,
-      providerId,
-      status: "completed"
-    });
-
+    // Check completed booking
+    const booking = await Booking.findOne({ userId, providerId, status: "completed" });
     if (!booking) {
-      return res.status(400).json({
-        message: "You can only review after completing a booking"
-      });
+      res.status(400).json({ message: "You can only review after a completed booking" });
+      return;
     }
 
-    // 2️⃣ Check 5 days passed
-    const bookingDate = new Date(booking.createdAt);
-    const now = new Date();
-
-    const diffDays =
-      (now.getTime() - bookingDate.getTime()) / (1000 * 60 * 60 * 24);
-
-    if (diffDays < 5) {
-      return res.status(400).json({
-        message: "You can review only after 5 days of service"
-      });
-    }
-
-    // 3️⃣ Prevent duplicate review
-    const existingReview = await Review.findOne({
-      userId,
-      providerId,
-      bookingId: booking._id
-    });
-
+    // Prevent duplicate review per booking
+    const existingReview = await Review.findOne({ userId, providerId, bookingId: booking._id });
     if (existingReview) {
-      return res.status(400).json({
-        message: "You already reviewed this booking"
-      });
+      res.status(400).json({ message: "You already reviewed this booking" });
+      return;
     }
 
-    // 4️⃣ Create review
-    const review = await Review.create({
-      userId,
-      providerId,
-      rating,
-      feedback,
-      bookingId: booking._id
+    const review = await Review.create({ userId, providerId, rating, feedback, bookingId: booking._id });
+
+    // Update provider average rating
+    const allReviews = await Review.find({ providerId });
+    const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+    await Provider.findByIdAndUpdate(providerId, {
+      rating: Math.round(avgRating * 10) / 10,
+      reviewCount: allReviews.length,
     });
 
     res.status(201).json(review);
-
   } catch (error) {
+    console.error("Review error:", error);
     res.status(500).json({ message: "Error adding review" });
   }
 };
 
 // GET REVIEWS BY PROVIDER
-export const getReviews = async (req: Request, res: Response) => {
+export const getReviews = async (req: Request, res: Response): Promise<void> => {
   try {
     const { providerId } = req.params;
-
     const reviews = await Review.find({ providerId })
       .populate("userId", "name")
       .sort({ createdAt: -1 });
-
     res.json(reviews);
-
   } catch (error) {
     res.status(500).json({ message: "Error fetching reviews" });
   }

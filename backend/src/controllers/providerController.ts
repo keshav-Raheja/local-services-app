@@ -21,14 +21,18 @@ export const createProvider = async (req: Request, res: Response) => {
   try {
     const { name, phone, experience, location, serviceId, userId } = req.body;
 
-    // ✅ validation
     if (!name || !phone || !serviceId || !userId) {
       return res.status(400).json({
         message: "Name, phone, serviceId and userId are required"
       });
     }
 
-    // ✅ prevent duplicate provider for same user
+    if (!location || location.lat === undefined || location.lng === undefined) {
+      return res.status(400).json({
+        message: "Location (lat, lng) is required"
+      });
+    }
+
     const existing = await Provider.findOne({ userId });
     if (existing) {
       return res.status(400).json({
@@ -39,8 +43,11 @@ export const createProvider = async (req: Request, res: Response) => {
     const provider = await Provider.create({
       name,
       phone,
-      experience: Number(experience), // ✅ FIX (important)
-      location,
+      experience: Number(experience),
+      location: {
+        lat: Number(location.lat),
+        lng: Number(location.lng)
+      },
       serviceId,
       userId
     });

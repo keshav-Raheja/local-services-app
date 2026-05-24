@@ -1,20 +1,17 @@
 import express from "express";
-
-
 import {
   createBooking,
   getUserBookings,
   updateBookingStatus,
-  getProviderBookings
+  getProviderBookings,
 } from "../controllers/bookingController";
+import { authenticate } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-
-
-router.post("/", createBooking);
-router.get("/:userId", getUserBookings);
-router.get("/provider/:providerId", getProviderBookings);
-router.put("/:bookingId", updateBookingStatus);
+router.post("/", authenticate, createBooking);
+router.get("/user/:userId", authenticate, getUserBookings);
+router.get("/provider/:providerId", authenticate, getProviderBookings);
+router.put("/:bookingId", authenticate, updateBookingStatus);
 
 export default router;
