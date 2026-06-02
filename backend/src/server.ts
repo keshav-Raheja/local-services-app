@@ -41,6 +41,15 @@ app.get("/", (_req, res) => {
   res.json({ message: "ServiceHub API is running ✅", version: "2.0.0" });
 });
 
+// Global Error Handler for JSON responses
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("❌ Server Error:", err.message || err);
+  const status = err.message === "Not allowed by CORS" ? 403 : (err.status || 500);
+  res.status(status).json({
+    message: err.message || "An unexpected server error occurred",
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 
 mongoose

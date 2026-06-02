@@ -9,21 +9,47 @@ function getAuthHeaders(): Record<string, string> {
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      ...getAuthHeaders(),
-      ...(options.headers || {}),
-    },
-  });
+  const url = `${BASE_URL}${endpoint}`;
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        ...getAuthHeaders(),
+        ...(options.headers || {}),
+      },
+    });
 
-  const data = await res.json();
+    const contentType = res.headers.get("content-type");
+    const isJson = contentType && contentType.includes("application/json");
 
-  if (!res.ok) {
-    throw new Error(data.message || "Something went wrong");
+    if (!res.ok) {
+      let errorMessage = `Server error: ${res.status} ${res.statusText}`;
+      if (isJson) {
+        try {
+          const data = await res.json();
+          errorMessage = data.message || errorMessage;
+        } catch (_) {}
+      } else {
+        try {
+          const text = await res.text();
+          if (text && text.length < 200) {
+            errorMessage = text;
+          }
+        } catch (_) {}
+      }
+      throw new Error(errorMessage);
+    }
+
+    if (isJson) {
+      return await res.json();
+    } else {
+      const text = await res.text();
+      return text as unknown as T;
+    }
+  } catch (error: any) {
+    console.error(`API request error on ${url}:`, error);
+    throw new Error(error.message || "Failed to connect to the server. Please check if the API is online.");
   }
-
-  return data;
 }
 
 export const api = {
