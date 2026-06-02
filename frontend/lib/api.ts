@@ -1,4 +1,14 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const getBaseUrl = (): string => {
+  let url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  url = url.trim();
+  if (url && !url.endsWith("/api") && !url.endsWith("/api/")) {
+    url = url.endsWith("/") ? `${url}api` : `${url}/api`;
+  }
+  return url;
+};
+
+const BASE_URL = getBaseUrl();
+
 
 function getAuthHeaders(): Record<string, string> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
