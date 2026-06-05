@@ -13,6 +13,12 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    if (!gmailRegex.test(email)) {
+      res.status(400).json({ message: "Please enter a valid Gmail address (ending in @gmail.com)" });
+      return;
+    }
+
     if (role === "provider" && !phone) {
       res.status(400).json({ message: "Phone number is required for providers" });
       return;

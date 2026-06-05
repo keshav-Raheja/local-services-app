@@ -17,6 +17,13 @@ export default function Signup() {
     setError("");
     if (!form.name || !form.email || !form.password) { setError("Please fill in all fields"); return; }
     if (form.role === "provider" && !form.phone) { setError("Phone number is required for providers"); return; }
+
+    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    if (!gmailRegex.test(form.email.trim())) {
+      setError("Please enter a valid Gmail address (ending in @gmail.com)");
+      return;
+    }
+
     if (form.password.length < 6) { setError("Password must be at least 6 characters"); return; }
 
     setLoading(true);
