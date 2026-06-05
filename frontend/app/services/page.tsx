@@ -123,12 +123,12 @@ export default function Services() {
         ) : (
           <div className="grid-3">
             {filtered.map((s, i) => (
-              <div key={s._id} className="card" style={{ padding: "28px", overflow: "hidden", position: "relative" }}>
+              <div key={s._id} className="card" style={{ padding: "28px", overflow: "hidden", position: "relative", display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
                 <div style={{
                   position: "absolute", top: 0, left: 0, right: 0, height: "4px",
                   background: `linear-gradient(90deg, ${serviceColors[i % serviceColors.length]}, transparent)`,
                 }} />
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", flex: 1 }}>
                   <div style={{
                     width: "52px", height: "52px", borderRadius: "14px", flexShrink: 0,
                     background: `${serviceColors[i % serviceColors.length]}20`,
