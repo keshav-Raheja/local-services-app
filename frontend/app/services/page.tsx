@@ -15,7 +15,7 @@ export default function Services() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ name: "", phone: "", experience: "", selectedService: "" });
+  const [form, setForm] = useState({ name: "", phone: "", experience: "", selectedService: "", price: "" });
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const router = useRouter();
 
@@ -38,19 +38,20 @@ export default function Services() {
   }, [search, services]);
 
   const handleAddProvider = async () => {
-    if (!form.name || !form.phone || !form.selectedService || !location) {
-      setError("Please fill all fields and enable location"); return;
+    if (!form.name || !form.phone || !form.selectedService || !location || !form.price) {
+      setError("Please fill all fields, including your charges, and enable location"); return;
     }
     setSubmitting(true); setError("");
     try {
       await api.post("/providers", {
         name: form.name, phone: form.phone,
         experience: Number(form.experience),
+        price: Number(form.price),
         location, serviceId: form.selectedService,
         userId: localStorage.getItem("userId"),
       });
       setShowForm(false);
-      setForm({ name: "", phone: "", experience: "", selectedService: "" });
+      setForm({ name: "", phone: "", experience: "", selectedService: "", price: "" });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -181,6 +182,7 @@ export default function Services() {
               <input className="input" placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               <input className="input" placeholder="Phone number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               <input className="input" type="number" placeholder="Years of experience" value={form.experience} onChange={(e) => setForm({ ...form, experience: e.target.value })} />
+              <input className="input" type="number" placeholder="Your charges / visiting fee (₹)" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
               <select className="input" value={form.selectedService} onChange={(e) => setForm({ ...form, selectedService: e.target.value })}>
                 <option value="">Select a service</option>
                 {services.map((s) => (<option key={s._id} value={s._id}>{s.name}</option>))}

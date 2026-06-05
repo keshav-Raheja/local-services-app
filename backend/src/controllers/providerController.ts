@@ -19,7 +19,7 @@ export const getProviders = async (req: Request, res: Response) => {
 // ✅ CREATE PROVIDER
 export const createProvider = async (req: Request, res: Response) => {
   try {
-    const { name, phone, experience, location, serviceId, userId } = req.body;
+    const { name, phone, experience, location, serviceId, userId, price } = req.body;
 
     if (!name || !phone || !serviceId || !userId) {
       return res.status(400).json({
@@ -49,7 +49,8 @@ export const createProvider = async (req: Request, res: Response) => {
         lng: Number(location.lng)
       },
       serviceId,
-      userId
+      userId,
+      price: price ? Number(price) : 0
     });
 
     res.status(201).json(provider);
@@ -81,5 +82,44 @@ export const getProviderBookings = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error fetching provider bookings" });
+  }
+};
+
+// ✅ GET PROVIDER PROFILE BY USER ID
+export const getProviderProfile = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const provider = await Provider.findOne({ userId }).populate("serviceId", "name");
+    if (!provider) {
+      return res.status(404).json({ message: "Provider profile not found" });
+    }
+    res.status(200).json(provider);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching provider profile" });
+  }
+};
+
+// ✅ UPDATE PROVIDER PROFILE
+export const updateProviderProfile = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { name, phone, experience, bio, avatar, price } = req.body;
+
+    const provider = await Provider.findOne({ userId });
+    if (!provider) {
+      return res.status(404).json({ message: "Provider profile not found" });
+    }
+
+    if (name) provider.name = name;
+    if (phone) provider.phone = phone;
+    if (experience !== undefined) provider.experience = Number(experience);
+    if (bio !== undefined) provider.bio = bio;
+    if (avatar !== undefined) provider.avatar = avatar;
+    if (price !== undefined) provider.price = Number(price);
+
+    await provider.save();
+    res.status(200).json(provider);
+  } catch (error) {
+    res.status(500).json({ message: "Error updating provider profile" });
   }
 };

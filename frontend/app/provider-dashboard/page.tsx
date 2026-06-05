@@ -19,6 +19,13 @@ export default function ProviderDashboard() {
   const [activeTab, setActiveTab] = useState("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  // Profile management state
+  const [profile, setProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState("");
+  const [profileErr, setProfileErr] = useState("");
+
   const fetchBookings = () => {
     if (!userId) return;
     api.get<Booking[]>(`/providers/bookings/${userId}`)
@@ -41,7 +48,41 @@ export default function ProviderDashboard() {
     }
   };
 
-  const tabs = ["all", "pending", "confirmed", "completed", "rejected"];
+  useEffect(() => {
+    if (activeTab === "profile" && userId) {
+      setProfileLoading(true);
+      setProfileMsg("");
+      setProfileErr("");
+      api.get(`/providers/profile/${userId}`)
+        .then((data) => setProfile(data))
+        .catch((err) => setProfileErr(err.message || "Failed to load profile. Please make sure you are registered as a provider."))
+        .finally(() => setProfileLoading(false));
+    }
+  }, [activeTab, userId]);
+
+  const handleSaveProfile = async () => {
+    if (!profile || !userId) return;
+    setProfileSaving(true);
+    setProfileMsg("");
+    setProfileErr("");
+    try {
+      const updated = await api.put(`/providers/profile/${userId}`, {
+        name: profile.name,
+        phone: profile.phone,
+        experience: Number(profile.experience),
+        price: Number(profile.price),
+        bio: profile.bio,
+      });
+      setProfile(updated);
+      setProfileMsg("Profile updated successfully!");
+    } catch (err: any) {
+      setProfileErr(err.message || "Failed to update profile.");
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const tabs = ["all", "pending", "confirmed", "completed", "rejected", "profile"];
   const filtered = activeTab === "all" ? bookings : bookings.filter((b) => b.status === activeTab);
 
   const stats = {
@@ -99,13 +140,69 @@ export default function ProviderDashboard() {
                 transition: "all 0.2s ease", textTransform: "capitalize",
               }}
             >
-              {tab === "all" ? "All" : tab}
-              {tab !== "all" && <span style={{ marginLeft: "6px", opacity: 0.8 }}>({bookings.filter((b) => b.status === tab).length})</span>}
+              {tab === "all" ? "All Bookings" : tab === "profile" ? "⚙️ Profile Settings" : tab}
+              {tab !== "all" && tab !== "profile" && (
+                <span style={{ marginLeft: "6px", opacity: 0.8 }}>
+                  ({bookings.filter((b) => b.status === tab).length})
+                </span>
+              )}
             </button>
           ))}
         </div>
 
-        {loading ? (
+        {activeTab === "profile" ? (
+          profileLoading ? (
+            <div className="skeleton" style={{ height: "300px" }} />
+          ) : profileErr ? (
+            <div className="card" style={{ padding: "24px", textAlign: "center", color: "#ef4444" }}>
+              ❌ {profileErr}
+            </div>
+          ) : profile ? (
+            <div className="card" style={{ padding: "32px", maxWidth: "600px", margin: "0 auto" }}>
+              <h3 style={{ fontWeight: 700, color: "var(--text-primary)", marginBottom: "8px" }}>⚙️ Edit Profile</h3>
+              <p style={{ color: "var(--text-secondary)", fontSize: "13px", marginBottom: "24px" }}>
+                Update your professional details and charges for customers to view.
+              </p>
+
+              {profileMsg && <div style={{ background: "#d1fae5", borderRadius: "10px", padding: "12px", color: "#065f46", fontSize: "13px", marginBottom: "16px" }}>✅ {profileMsg}</div>}
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div>
+                  <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Full Name</label>
+                  <input className="input" value={profile.name || ""} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Phone Number</label>
+                  <input className="input" value={profile.phone || ""} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Service Charges (₹)</label>
+                  <input className="input" type="number" value={profile.price || 0} onChange={(e) => setProfile({ ...profile, price: Number(e.target.value) })} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Years of Experience</label>
+                  <input className="input" type="number" value={profile.experience || 0} onChange={(e) => setProfile({ ...profile, experience: Number(e.target.value) })} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Service Offered</label>
+                  <input className="input" disabled value={profile.serviceId?.name || "Service"} style={{ opacity: 0.7 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Professional Bio</label>
+                  <textarea className="input" value={profile.bio || ""} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} style={{ minHeight: "100px", resize: "vertical" }} placeholder="Tell customers about your skills and services..." />
+                </div>
+
+                <button onClick={handleSaveProfile} disabled={profileSaving} className="btn btn-primary" style={{ width: "100%", padding: "14px", marginTop: "12px" }}>
+                  {profileSaving ? "Saving changes..." : "Save Profile Details →"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="card" style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)" }}>
+              No profile found. Please register as a provider on the services page first.
+            </div>
+          )
+        ) : loading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {[1,2,3].map((i) => <div key={i} className="skeleton" style={{ height: "160px" }} />)}
           </div>

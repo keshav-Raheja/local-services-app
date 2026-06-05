@@ -6,6 +6,7 @@ const providerSchema = new mongoose.Schema(
     phone: { type: String, required: true },
     serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service", required: true },
     experience: { type: Number, default: 0 },
+    price: { type: Number, default: 0 },
     location: {
       lat: { type: Number },
       lng: { type: Number },

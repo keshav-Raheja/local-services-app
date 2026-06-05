@@ -4,6 +4,7 @@ import bookingRoutes from "./routes/bookingRoutes";
 import serviceRoutes from "./routes/serviceRoutes";
 import authRoutes from "./routes/authRoutes";
 import supportRoutes from "./routes/supportRoutes";
+import Service from "./models/serviceModel";
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -52,10 +53,37 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 
 const PORT = process.env.PORT || 5000;
 
+async function seedServices() {
+  try {
+    const defaultServices = [
+      { name: "Electrician", price: 500, description: "Wiring, repairs & installations" },
+      { name: "Home Tutor", price: 300, description: "Math, Science and language coaching" },
+      { name: "Laptop Repair", price: 700, description: "Hardware diagnostics and software fixes" },
+      { name: "Plumber", price: 400, description: "Pipes, leak fixes & fixtures" },
+      { name: "Shuttering (Sattering)", price: 1200, description: "Concrete framework and construction support" },
+      { name: "Painter", price: 600, description: "Interior and exterior wall painting" },
+      { name: "Cleaner", price: 350, description: "Deep cleaning and housekeeping services" },
+      { name: "AC Repair", price: 800, description: "Servicing, gas refilling, and installations" },
+      { name: "Locksmith", price: 450, description: "Lock repair, key cutting & emergency unlocking" },
+    ];
+
+    for (const svc of defaultServices) {
+      const exists = await Service.findOne({ name: svc.name });
+      if (!exists) {
+        await Service.create(svc);
+        console.log(`🌱 Seeded service: ${svc.name}`);
+      }
+    }
+  } catch (err) {
+    console.error("❌ Error seeding services:", err);
+  }
+}
+
 mongoose
   .connect(process.env.MONGO_URI as string)
-  .then(() => {
+  .then(async () => {
     console.log("✅ MongoDB connected");
+    await seedServices();
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });

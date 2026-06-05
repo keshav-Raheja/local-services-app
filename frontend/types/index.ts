@@ -33,6 +33,7 @@ export interface Provider {
   avatar?: string;
   isVerified?: boolean;
   totalBookings?: number;
+  price?: number;
   createdAt: string;
 }
 

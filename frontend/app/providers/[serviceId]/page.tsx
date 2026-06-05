@@ -148,6 +148,9 @@ export default function Providers() {
                     <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
                       📞 {p.phone}
                     </div>
+                    <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                      💵 Charges: <span style={{ fontWeight: 700, color: "var(--primary)" }}>₹{p.price || 0}</span>
+                    </div>
                   </div>
 
                   <div style={{ display: "flex", gap: "8px" }}>
