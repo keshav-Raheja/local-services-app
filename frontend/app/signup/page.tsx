@@ -6,7 +6,7 @@ import api from "../../lib/api";
 
 export default function Signup() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "user" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "user", phone: "" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -16,6 +16,7 @@ export default function Signup() {
   const handleSignup = async () => {
     setError("");
     if (!form.name || !form.email || !form.password) { setError("Please fill in all fields"); return; }
+    if (form.role === "provider" && !form.phone) { setError("Phone number is required for providers"); return; }
     if (form.password.length < 6) { setError("Password must be at least 6 characters"); return; }
 
     setLoading(true);
@@ -94,6 +95,9 @@ export default function Signup() {
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <input placeholder="Full Name" value={form.name} onChange={(e) => set("name", e.target.value)} style={inputStyle} />
           <input type="email" placeholder="Email address" value={form.email} onChange={(e) => set("email", e.target.value)} style={inputStyle} />
+          {form.role === "provider" && (
+            <input placeholder="Phone number" value={form.phone} onChange={(e) => set("phone", e.target.value)} style={inputStyle} />
+          )}
           <div style={{ position: "relative" }}>
             <input
               type={showPass ? "text" : "password"}

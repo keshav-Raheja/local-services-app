@@ -6,10 +6,15 @@ import jwt from "jsonwebtoken";
 // REGISTER
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, phone } = req.body;
 
     if (!name || !email || !password) {
       res.status(400).json({ message: "Name, email and password are required" });
+      return;
+    }
+
+    if (role === "provider" && !phone) {
+      res.status(400).json({ message: "Phone number is required for providers" });
       return;
     }
 
@@ -31,6 +36,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       email,
       password: hashedPassword,
       role: role || "user",
+      phone,
     });
 
     res.status(201).json({
