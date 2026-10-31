@@ -20,15 +20,35 @@ export interface Service {
   createdAt?: string;
 }
 
+export interface UserLocation {
+  displayLabel?: string;
+  address?: string;
+  locality?: string;
+  city: string;
+  state?: string;
+  pincode?: string;
+  lat?: number;
+  lng?: number;
+  source?: "gps" | "manual" | "search";
+}
+
 export interface Provider {
   _id: string;
   name: string;
   phone: string;
   experience?: number;
   location?: { lat: number; lng: number };
+  address?: string;
+  locality?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  serviceAreas?: string[];
+  serviceRadiusKm?: number;
   serviceId: string | Service;
   userId: string | User;
   rating: number;
+  reviewCount?: number;
   bio?: string;
   avatar?: string;
   isVerified?: boolean;
@@ -37,12 +57,24 @@ export interface Provider {
   createdAt: string;
 }
 
+export interface ServiceAddress {
+  address: string;
+  recipientName?: string;
+  locality?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  lat?: number;
+  lng?: number;
+}
+
 export interface Booking {
   _id: string;
   userId: string | User;
   serviceId: string | Service;
   providerId: string | Provider;
   date: string;
+  serviceAddress?: ServiceAddress;
   status: "pending" | "confirmed" | "completed" | "rejected";
   notes?: string;
   createdAt: string;

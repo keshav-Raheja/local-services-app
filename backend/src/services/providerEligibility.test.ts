@@ -1,0 +1,8 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { evaluateProviderCoverage } from "./providerEligibility";
+const provider = { city: "Pune", locality: "Kothrud", pincode: "411038", location: { lat: 18.5204, lng: 73.8567 }, serviceRadiusKm: 10, serviceAreas: [] };
+test("accepts inside and boundary radius", () => { assert.equal(evaluateProviderCoverage(provider, { city: "Pune", lat: 18.5204, lng: 73.8567 }).eligible, true); const result = evaluateProviderCoverage({ ...provider, serviceRadiusKm: 1 }, { city: "Pune", lat: 18.52939, lng: 73.8567 }); assert.equal(result.reason, "within-radius"); });
+test("rejects out-of-radius city match", () => { const result = evaluateProviderCoverage({ ...provider, serviceRadiusKm: 1 }, { city: "Pune", lat: 19, lng: 73.8567 }); assert.equal(result.reason, "outside-radius"); });
+test("accepts exact declared area without coordinates", () => { const result = evaluateProviderCoverage({ city: "Pune", serviceAreas: ["Wakad"] }, { city: "Pune", locality: "Wakad" }); assert.equal(result.reason, "explicit-coverage"); });
+test("rejects invalid target and missing radius", () => { assert.equal(evaluateProviderCoverage(provider, { city: "Pune", lat: 91, lng: 73 }).reason, "invalid-target"); assert.equal(evaluateProviderCoverage({ ...provider, serviceRadiusKm: undefined }, { city: "Pune", lat: 18.5204, lng: 73.8567 }).reason, "invalid-radius"); });

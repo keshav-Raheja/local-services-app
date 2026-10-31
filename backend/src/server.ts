@@ -4,6 +4,7 @@ import bookingRoutes from "./routes/bookingRoutes";
 import serviceRoutes from "./routes/serviceRoutes";
 import authRoutes from "./routes/authRoutes";
 import supportRoutes from "./routes/supportRoutes";
+import locationRoutes from "./routes/locationRoutes";
 import Service from "./models/serviceModel";
 import express from "express";
 import mongoose from "mongoose";
@@ -37,6 +38,7 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/support", supportRoutes);
+app.use("/api/location", locationRoutes);
 
 app.get("/", (_req, res) => {
   res.json({ message: "ServiceHub API is running ✅", version: "2.0.0" });
@@ -79,8 +81,13 @@ async function seedServices() {
   }
 }
 
+console.log("Connecting to MongoDB...");
+
 mongoose
-  .connect(process.env.MONGO_URI as string)
+  .connect(process.env.MONGO_URI as string, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  })
   .then(async () => {
     console.log("✅ MongoDB connected");
     await seedServices();
@@ -88,4 +95,4 @@ mongoose
       console.log(`🚀 Server running on port ${PORT}`);
     });
   })
-  .catch((err) => console.error("❌ DB connection error:", err));
+  .catch((err) => console.error("MongoDB connection failed; API server was not started:", err.message));

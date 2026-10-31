@@ -1,30 +1,29 @@
 import type { Metadata } from "next";
-import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import Navbar from "../components/Navbar";
+import ConditionalFooter from "../components/ConditionalFooter";
 import { Toaster } from "../components/Toast";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
-
 export const metadata: Metadata = {
-  title: "ServiceHub — Home Services at Your Doorstep",
+  title: "SevaHub — India's Trusted Local Services Marketplace",
   description:
-    "Book trusted local professionals for electricians, plumbers, tutors, laptop repair and more. Fast, reliable, and affordable home services.",
-  keywords: "home services, electrician, plumber, tutor, laptop repair, local professionals",
+    "Connect directly with verified local tradespeople, electricians, plumbers, AC technicians, painters, and technical specialists across Indian cities. Transparent pricing, honest ratings.",
+  keywords:
+    "local services india, electrician, plumber, ac repair, home tutor, cleaner, painter, local technicians, verified tradespeople",
   openGraph: {
-    title: "ServiceHub — Home Services at Your Doorstep",
-    description: "Book trusted local professionals instantly.",
+    title: "SevaHub — Local Services at Your Doorstep",
+    description: "Verified local electricians, plumbers, and home service experts in your Indian metro.",
     type: "website",
   },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
-      <body>
+    <html lang="en" data-scroll-behavior="smooth">
+      <body style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <Navbar />
-        <main>{children}</main>
+        <main style={{ flex: 1 }}>{children}</main>
+        <ConditionalFooter />
         <Toaster />
       </body>
     </html>

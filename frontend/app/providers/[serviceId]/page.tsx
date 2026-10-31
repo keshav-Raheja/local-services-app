@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "../../../hooks/useAuth";
 import api from "../../../lib/api";
-import { Provider, Review } from "../../../types";
+import { Provider, Review, ServiceAddress } from "../../../types";
+import { getUserLocation, UserLocation, reverseGeocodeCoords } from "../../../lib/locations";
 
 export default function Providers() {
   const params = useParams();
@@ -17,28 +18,64 @@ export default function Providers() {
   const [loading, setLoading] = useState(true);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [bookingDate, setBookingDate] = useState("");
+  const [bookingAddress, setBookingAddress] = useState<ServiceAddress>({ address: "", recipientName: "" });
+  const [bookingLocationLoading, setBookingLocationLoading] = useState(false);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [bookingSuccess, setBookingSuccess] = useState<string | null>(null);
   const [reviewSuccess, setReviewSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState<UserLocation | null>(null);
   const [mode, setMode] = useState<"book" | "review">("book");
 
   useEffect(() => {
+    setSelectedLocation(getUserLocation());
+    const handleLocationChange = () => setSelectedLocation(getUserLocation());
+    window.addEventListener("location_changed", handleLocationChange);
+    window.addEventListener("city_changed", handleLocationChange);
+    return () => { window.removeEventListener("location_changed", handleLocationChange); window.removeEventListener("city_changed", handleLocationChange); };
+  }, []);
+
+  useEffect(() => {
     if (!serviceId) return;
-    api.get<Provider[]>(`/providers/${serviceId}`).then(async (data) => {
-      setProviders(data);
+    let active = true;
+    setLoading(true);
+    setError("");
+    setProviders([]);
+    const locationParams = new URLSearchParams();
+    if (selectedLocation?.city) locationParams.set("city", selectedLocation.city);
+    if (selectedLocation?.locality) locationParams.set("locality", selectedLocation.locality);
+    if (selectedLocation?.pincode) locationParams.set("pincode", selectedLocation.pincode);
+    if (typeof selectedLocation?.lat === "number") locationParams.set("lat", String(selectedLocation.lat));
+    if (typeof selectedLocation?.lng === "number") locationParams.set("lng", String(selectedLocation.lng));
+    const query = locationParams.toString();
+    api.get<Provider[]>("/providers/" + serviceId + (query ? "?" + query : "")).then(async (data) => {
+      if (!active) return;
+      setProviders(data || []);
       const reviewMap: Record<string, Review[]> = {};
-      await Promise.all(data.map(async (p) => {
-        const r = await api.get<Review[]>(`/reviews/${p._id}`);
-        reviewMap[p._id] = r;
+      await Promise.all((data || []).map(async (provider) => {
+        try { reviewMap[provider._id] = await api.get<Review[]>(`/reviews/${provider._id}`); } catch { reviewMap[provider._id] = []; }
       }));
-      setReviews(reviewMap);
-    }).finally(() => setLoading(false));
-  }, [serviceId]);
+      if (active) setReviews(reviewMap);
+    }).catch((requestError: unknown) => {
+      if (active) setError(requestError instanceof Error ? requestError.message : "Unable to load providers");
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [serviceId, selectedLocation]);
+
+  const useBookingLocation = () => {
+    if (!navigator.geolocation) { setError("Current location is not supported by this browser."); return; }
+    setBookingLocationLoading(true); setError("");
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try { const location = await reverseGeocodeCoords(coords.latitude, coords.longitude); setBookingAddress((current) => ({ ...current, address: location.address || current.address, locality: location.locality, city: location.city, state: location.state, pincode: location.pincode, lat: location.lat, lng: location.lng })); }
+      catch (error) { setError(error instanceof Error ? error.message : "Unable to determine the service address."); }
+      finally { setBookingLocationLoading(false); }
+    }, () => { setBookingLocationLoading(false); setError("Location permission was denied. Enter the service address manually."); }, { timeout: 10000 });
+  };
 
   const bookProvider = async () => {
     if (!bookingDate) { setError("Please select a date"); return; }
+    if (!bookingAddress.address.trim()) { setError("Enter the address where the service is needed."); return; }
     setError("");
     try {
       await api.post("/bookings", {
@@ -46,6 +83,7 @@ export default function Providers() {
         serviceId,
         providerId: selectedProvider?._id,
         date: bookingDate,
+        serviceAddress: bookingAddress,
       });
       setBookingSuccess("Booking confirmed! Check 'My Bookings' for status.");
       setTimeout(() => { setSelectedProvider(null); setBookingSuccess(null); router.push("/bookings"); }, 2000);
@@ -224,7 +262,7 @@ export default function Providers() {
                   onChange={(e) => setBookingDate(e.target.value)}
                   style={{ marginBottom: "20px" }}
                 />
-                {isLoggedIn ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}><label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Service address<input className="input" placeholder="Full address where service is needed" value={bookingAddress.address} onChange={(event) => setBookingAddress((current) => ({ ...current, address: event.target.value }))} /></label><label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>City or PIN code<input className="input" placeholder="City, locality, or PIN code" value={bookingAddress.city || ""} onChange={(event) => setBookingAddress((current) => ({ ...current, city: event.target.value }))} /></label></div><button type="button" onClick={useBookingLocation} className="btn btn-secondary" disabled={bookingLocationLoading} style={{ alignSelf: "flex-start", marginBottom: "16px" }}>{bookingLocationLoading ? "Resolving current location..." : "Use my current location"}</button>   {isLoggedIn ? (
                   <button onClick={bookProvider} className="btn btn-primary" style={{ width: "100%", padding: "12px" }}>
                     Confirm Booking →
                   </button>

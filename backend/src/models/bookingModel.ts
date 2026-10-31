@@ -19,6 +19,17 @@ const bookingSchema = new mongoose.Schema(
     },
 
     
+    serviceAddress: {
+      address: { type: String, required: true, trim: true },
+      recipientName: { type: String, default: "", trim: true },
+      locality: { type: String, default: "", trim: true },
+      city: { type: String, default: "", trim: true },
+      state: { type: String, default: "", trim: true },
+      pincode: { type: String, default: "", trim: true },
+      lat: { type: Number },
+      lng: { type: Number },
+    },
+
     date: {
       type: Date,
       required: true
